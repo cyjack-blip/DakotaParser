@@ -3,3 +3,5 @@ __pycahce__
 */__pycache__/*
 venv
 .idea
+DakotaParser/__pycache__/
+DakotaParser/spyders/__pycache__/
