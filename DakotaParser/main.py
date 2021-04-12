@@ -9,6 +9,8 @@ if __name__ == "__main__":
     crawler_settings.setmodule(settings)
 
     process = CrawlerProcess(settings=crawler_settings)
-    process.crawl(TinkoffruSpider, last_item_id=576300)
+    with open('next_end_point.txt', 'r') as f:
+        end_point = int(f.read())
+    process.crawl(TinkoffruSpider, last_item_id=end_point)
 
     process.start()

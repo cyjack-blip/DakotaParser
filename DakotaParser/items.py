@@ -8,6 +8,7 @@ import scrapy
 
 class DakotaparserItem(scrapy.Item):
     _id = scrapy.Field()
+    _spider = scrapy.Field()
     visible = scrapy.Field()
     type = scrapy.Field()
     published_at = scrapy.Field()

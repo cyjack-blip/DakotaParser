@@ -24,11 +24,18 @@ class TinkoffruSpider(scrapy.Spider):
     def spider_closed(self, spider):
         print(f'spider "{spider.name}" report')
         if self.parced_items:
+            end = max(self.parced_items)+1
             print(f'parsed items: {sorted(self.parced_items)}')
-            print(f'lets make next parse from: {max(self.parced_items)+1}')
+            print(f'lets make next parse from: {end}')
         else:
+            end = self.last_item_id
             print('nothing new parsed')
-            print(f'lets make next parse from: {self.last_item_id}')
+            print(f'lets make next parse from: {end}')
+
+        with open('next_end_point.txt', 'w') as f:
+            f.write(str(end))
+            f.close()
+
 
     def parse(self, response: HtmlResponse):
         # get sessionId
@@ -163,7 +170,7 @@ class TinkoffruSpider(scrapy.Spider):
                     img_big=post['payload']['news']['img_big'],
                     tickers=post['payload']['news']['tickers'],
                     provider=post['payload']['news']['provider']['name'],
-                    item=''
+                    item=post['payload']
                 )
                 yield item
         else:
