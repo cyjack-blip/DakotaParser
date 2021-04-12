@@ -1,11 +1,9 @@
 import scrapy
 from scrapy.http import HtmlResponse
 from DakotaParser.items import DakotaparserItem
-from DakotaParser.items import DakotaparserIdeaItem
-import json
 from urllib.parse import quote_plus
-from dateutil.parser import parse
-from copy import deepcopy
+from pydispatch import dispatcher
+from scrapy import signals
 
 
 class TinkoffruSpider(scrapy.Spider):
@@ -13,12 +11,24 @@ class TinkoffruSpider(scrapy.Spider):
     allowed_domains = ['tinkoff.ru']
     start_urls = ['https://www.tinkoff.ru/invest/feed/']
     base_url = 'https://www.tinkoff.ru'
-    feed_url = 'https://www.tinkoff.ru/api/invest/smartfeed-public/v1/feed/api/main'
+    feed_url = 'https://www.tinkoff.ru/api/invest/smartfeed-public/v1/feed/api/main'  # url для постраничного парса
+    single_news_url = 'https://www.tinkoff.ru/api/invest/smartfeed-public/v1/feed/api/news'  # url для отдельных новостей
 
     def __init__(self, **kwargs):
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
         self.last_item_id = kwargs.pop('last_item_id')
         self.parced_items = []
         super().__init__(**kwargs)
+
+    # сюда попадаем, когда парсер закончил свою работу
+    def spider_closed(self, spider):
+        print(f'spider "{spider.name}" report')
+        if self.parced_items:
+            print(f'parsed items: {sorted(self.parced_items)}')
+            print(f'lets make next parse from: {max(self.parced_items)+1}')
+        else:
+            print('nothing new parsed')
+            print(f'lets make next parse from: {self.last_item_id}')
 
     def parse(self, response: HtmlResponse):
         # get sessionId
@@ -39,6 +49,7 @@ class TinkoffruSpider(scrapy.Spider):
 
     def parce_news(self, response: HtmlResponse, payload, trackingId, cursor):
         j_body = response.json()
+        this_parsed = []
         if j_body.get('status') == 'Ok':
             cursor = j_body.get('payload').get('meta').get('cursor')
             request_url = f'{self.feed_url}?sessionId={payload}&cursor={quote_plus(cursor)}'
@@ -51,26 +62,12 @@ class TinkoffruSpider(scrapy.Spider):
                     cb_kwargs={'payload': payload, 'trackingId': trackingId, 'cursor': cursor}
                 )
 
+            borders = self.get_min_and_max(posts)
+
             for post in posts:
-                if post['type'] == 'news' or post['type'] == 'review':
-                    if post['item']['id'] > self.last_item_id:
-                        item = DakotaparserItem(
-                            type=post['type'],
-                            visible=True,
-                            published_at=post['published_at'],
-                            post_id=post['item']['id'],
-                            title=post['item']['title'],
-                            body=post['item']['body'],
-                            img_big=post['item']['img_big'],
-                            tickers=post['item']['tickers'],
-                            provider=post['item']['provider']['name'],
-                            item=post
-                        )
-                        self.parced_items.append(post['item']['id'])
-                        yield item
-                elif post['type'] == 'company_news':
+                if post['type'] == 'company_news':
                     for company_news in post['item']['items']:
-                        if company_news['item']['id'] > self.last_item_id:
+                        if company_news['item']['id'] >= self.last_item_id:
                             item = DakotaparserItem(
                                 type=company_news['type'],
                                 visible=True,
@@ -84,28 +81,103 @@ class TinkoffruSpider(scrapy.Spider):
                                 item=company_news
                             )
                             self.parced_items.append(company_news['item']['id'])
+                            this_parsed.append(company_news['item']['id'])
                             yield item
-
-                elif post['type'] == 'idea':
-                    item = DakotaparserIdeaItem(
-                        type=post['type'],
-                        visible=True,
-                        published_at=post['published_at'],
-                        post_id=post['item']['id'],
-                        broker_id=post['item']['broker_id'],
-                        horizon=post['item']['horizon'],
-                        date_start=post['item']['date_start'],
-                        date_end=post['item']['date_end'],
-                        target_yield=post['item']['target_yield'],
-                        title=post['item']['title'],
-                        body=post['item']['description'],
-                        tickers=post['item']['tickers'],
-                        provider=post['item']['broker']['name'],
-                        provider_accuracy=post['item']['broker']['accuracy'],
-                    )
-                        # yield item
                 else:
-                    print(f"found new type: {post['type']}")
+                    if post['item']['id'] >= self.last_item_id:
+                        if post['type'] == 'news' or post['type'] == 'review':
+                            item = DakotaparserItem(
+                                type=post['type'],
+                                visible=True,
+                                published_at=post['published_at'],
+                                post_id=post['item']['id'],
+                                title=post['item']['title'],
+                                body=post['item']['body'],
+                                img_big=post['item']['img_big'],
+                                tickers=post['item']['tickers'],
+                                provider=post['item']['provider']['name'],
+                                item=post
+                            )
+                            self.parced_items.append(post['item']['id'])
+                            this_parsed.append(post['item']['id'])
+                            yield item
+                        # elif post['type'] == 'idea':
+                        #     item = DakotaparserIdeaItem(
+                        #         type=post['type'],
+                        #         visible=True,
+                        #         published_at=post['published_at'],
+                        #         post_id=post['item']['id'],
+                        #         broker_id=post['item']['broker_id'],
+                        #         horizon=post['item']['horizon'],
+                        #         date_start=post['item']['date_start'],
+                        #         date_end=post['item']['date_end'],
+                        #         target_yield=post['item']['target_yield'],
+                        #         title=post['item']['title'],
+                        #         body=post['item']['description'],
+                        #         tickers=post['item']['tickers'],
+                        #         provider=post['item']['broker']['name'],
+                        #         provider_accuracy=post['item']['broker']['accuracy'],
+                        #     )
+                            # yield item
+                        else:
+                            print(f"found new type: {post['type']}")
 
-    def parse_hidden_news(self):
-        pass
+
+            # parse hidden news
+            try:
+                for i in [x for x in range(borders['min'], borders['max']) if x not in this_parsed]:
+                    hidden_url = f'{self.single_news_url}/{i}?sessionId={payload}'
+                    yield response.follow(
+                        hidden_url,
+                        callback=self.parse_hidden_news,
+                        cb_kwargs={'payload': payload, 'i': i}
+                    )
+            except Exception as e:
+                print(f'{e}')
+
+    def get_min_and_max(self, posts):
+        ids = []
+        count = dict()
+        for post in posts:
+            if post['type'] != 'company_news':
+                ids.append(post['item']['id'])
+        count['min'] = min(ids)
+        count['max'] = max(ids)
+        if count['min'] < self.last_item_id:
+            count['min'] = self.last_item_id
+        return count
+
+    def parse_hidden_news(self, response: HtmlResponse, payload, i):
+        post = response.json()
+        self.parced_items.append(i)
+        if post['status'] == 'Ok':
+            a = post['payload']['news']['id']
+            if post['payload']['news']['id'] >= self.last_item_id:
+                item = DakotaparserItem(
+                    type='news',
+                    visible=False,
+                    published_at=post['payload']['news']['date'],
+                    post_id=post['payload']['news']['id'],
+                    title=post['payload']['news']['title'],
+                    body=post['payload']['news']['body'],
+                    img_big=post['payload']['news']['img_big'],
+                    tickers=post['payload']['news']['tickers'],
+                    provider=post['payload']['news']['provider']['name'],
+                    item=''
+                )
+                yield item
+        else:
+            item = DakotaparserItem(
+                type='news',
+                visible=False,
+                published_at='2020-01-01T00:00:01+03:00',
+                post_id=i,
+                title='empty',
+                body='',
+                img_big='',
+                tickers='',
+                provider='',
+                item=''
+            )
+            yield item
+
