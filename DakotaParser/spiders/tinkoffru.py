@@ -5,6 +5,8 @@ from urllib.parse import quote_plus
 from pydispatch import dispatcher
 from scrapy import signals
 
+from pymongo import MongoClient
+
 
 class TinkoffruSpider(scrapy.Spider):
     name = 'tinkoffru'
@@ -16,9 +18,23 @@ class TinkoffruSpider(scrapy.Spider):
 
     def __init__(self, **kwargs):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
-        self.last_item_id = kwargs.pop('last_item_id')
+        # self.last_item_id = kwargs.pop('last_item_id')
+        self.last_item_id = self.get_ednpoint()
         self.parced_items = []
         super().__init__(**kwargs)
+
+    def get_ednpoint(self):
+        _client = MongoClient('localhost', 27017)
+        _mongo_base = _client['parsed']
+        collection = _mongo_base[self.name+'_settings']
+        result = collection.find_one({'name': 'endpoint'})
+        return int(result['value'])
+
+    def set_ednpoint(self, endpoint):
+        _client = MongoClient('localhost', 27017)
+        _mongo_base = _client['parsed']
+        collection = _mongo_base[self.name+'_settings']
+        collection.update_one({'name': 'endpoint'}, {"$set": {'value': endpoint}})
 
     # сюда попадаем, когда парсер закончил свою работу
     def spider_closed(self, spider):
@@ -32,10 +48,7 @@ class TinkoffruSpider(scrapy.Spider):
             print('nothing new parsed')
             print(f'lets make next parse from: {end}')
 
-        with open('next_end_point.txt', 'w') as f:
-            f.write(str(end))
-            f.close()
-
+        self.set_ednpoint(str(end))
 
     def parse(self, response: HtmlResponse):
         # get sessionId
@@ -62,7 +75,13 @@ class TinkoffruSpider(scrapy.Spider):
             request_url = f'{self.feed_url}?sessionId={payload}&cursor={quote_plus(cursor)}'
             trackingId = j_body.get('trackingId')
             posts = j_body.get('payload').get('items')
-            if posts[0]['item']['id'] > self.last_item_id:
+
+            if posts[0]['type'] == 'company_news':
+                start_item_id = posts[0]['item']['items'][0]['item']['id']
+            else:
+                start_item_id = posts[0]['item']['id']
+
+            if start_item_id > self.last_item_id:  # падает если сверху новости компании
                 yield response.follow(
                     request_url,
                     callback=self.parce_news,
