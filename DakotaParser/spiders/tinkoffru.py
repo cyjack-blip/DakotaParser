@@ -26,15 +26,15 @@ class TinkoffruSpider(scrapy.Spider):
     def get_ednpoint(self):
         _client = MongoClient('localhost', 27017)
         _mongo_base = _client['parsed']
-        collection = _mongo_base[self.name+'_settings']
-        result = collection.find_one({'name': 'endpoint'})
+        collection = _mongo_base['settings']
+        result = collection.find_one({'$and': [{'name': 'endpoint'}, {'parser': self.name}]})
         return int(result['value'])
 
     def set_ednpoint(self, endpoint):
         _client = MongoClient('localhost', 27017)
         _mongo_base = _client['parsed']
-        collection = _mongo_base[self.name+'_settings']
-        collection.update_one({'name': 'endpoint'}, {"$set": {'value': endpoint}})
+        collection = _mongo_base['settings']
+        collection.update_one({'$and': [{'name': 'endpoint'}, {'parser': self.name}]}, {"$set": {'value': endpoint}})
 
     # сюда попадаем, когда парсер закончил свою работу
     def spider_closed(self, spider):

@@ -19,21 +19,26 @@ class DakotaparserPipeline(DakotaparserItem):
         self._mongo_base = _client['parsed']
 
     def process_item(self, item, spider):
-        static_brands_trading = 'http://static.tinkoff.ru/brands/traiding/'
-        # print(type(item))
-        if isinstance(item, DakotaparserItem):
-            collection = self._mongo_base[spider.name]
-            print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['visible']} :: {item['type']} :: {item['title']}")
-            item['_spider'] = spider.name
-            if item['title'] != 'empty':
-                for n, i in enumerate(item['tickers']):
-                    a = f"{static_brands_trading}{i['logo_name'].split('.')[0]}x160.{i['logo_name'].split('.')[1]}"
-                    # print(n, ' ', i['logo_name'], ' ', a)
-                    item['tickers'][n]['logo_url'] = a
-                collection.insert_one(item)
+        if spider.name == 'tinkoffru':
+            static_brands_trading = 'http://static.tinkoff.ru/brands/traiding/'
+            # print(type(item))
+            if isinstance(item, DakotaparserItem):
+                collection = self._mongo_base[spider.name]
+                print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['visible']} :: {item['type']} :: {item['title']}")
+                item['_spider'] = spider.name
+                if item['title'] != 'empty':
+                    for n, i in enumerate(item['tickers']):
+                        a = f"{static_brands_trading}{i['logo_name'].split('.')[0]}x160.{i['logo_name'].split('.')[1]}"
+                        # print(n, ' ', i['logo_name'], ' ', a)
+                        item['tickers'][n]['logo_url'] = a
+                    collection.insert_one(item)
 
-        if isinstance(item, DakotaparserIdeaItem):
-            print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['type']} +{item['target_yield']}% :: {item['title']} :: {item['provider']} ({item['provider_accuracy']}%)")
+            if isinstance(item, DakotaparserIdeaItem):
+                print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['type']} +{item['target_yield']}% :: {item['title']} :: {item['provider']} ({item['provider_accuracy']}%)")
+
+        if spider.name == 'ruinvestingcom':
+            print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['category']} :: {item['provider']} :: {item['title']}")
+
         return item
 
 

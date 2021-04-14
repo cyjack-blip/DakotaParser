@@ -37,3 +37,16 @@ class DakotaparserIdeaItem(scrapy.Item):
     tickers = scrapy.Field()
     provider = scrapy.Field()
     provider_accuracy = scrapy.Field()
+
+
+class RuinvestingcomItem(scrapy.Item):
+    _id = scrapy.Field()
+    type = scrapy.Field()
+    category = scrapy.Field()
+    published_at = scrapy.Field()
+    post_id = scrapy.Field()
+    title = scrapy.Field()
+    body = scrapy.Field()
+    img_big = scrapy.Field()
+    tickers = scrapy.Field()
+    provider = scrapy.Field()
