@@ -12,6 +12,6 @@ if __name__ == "__main__":
 
     process = CrawlerProcess(settings=crawler_settings)
     process.crawl(RuinvestingcomSpider)
-    # process.crawl(TinkoffruSpider)
+    process.crawl(TinkoffruSpider)
 
     process.start()
