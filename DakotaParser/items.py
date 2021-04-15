@@ -41,6 +41,7 @@ class DakotaparserIdeaItem(scrapy.Item):
 
 class RuinvestingcomItem(scrapy.Item):
     _id = scrapy.Field()
+    _spider = scrapy.Field()
     type = scrapy.Field()
     category = scrapy.Field()
     published_at = scrapy.Field()

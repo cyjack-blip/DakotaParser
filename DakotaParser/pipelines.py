@@ -37,7 +37,10 @@ class DakotaparserPipeline(DakotaparserItem):
                 print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['type']} +{item['target_yield']}% :: {item['title']} :: {item['provider']} ({item['provider_accuracy']}%)")
 
         if spider.name == 'ruinvestingcom':
-            print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['category']} :: {item['provider']} :: {item['title']}")
+            collection = self._mongo_base[spider.name]
+            item['_spider'] = spider.name
+            collection.insert_one(item)
+            print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['category']} :: {item['provider']} :: {item['title']} :: tickers:{len(item['tickers'])}")
 
         return item
 

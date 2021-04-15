@@ -19,18 +19,18 @@ class TinkoffruSpider(scrapy.Spider):
     def __init__(self, **kwargs):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
         # self.last_item_id = kwargs.pop('last_item_id')
-        self.last_item_id = self.get_ednpoint()
+        self.last_item_id = self.get_endpoint()
         self.parced_items = []
         super().__init__(**kwargs)
 
-    def get_ednpoint(self):
+    def get_endpoint(self):
         _client = MongoClient('localhost', 27017)
         _mongo_base = _client['parsed']
         collection = _mongo_base['settings']
         result = collection.find_one({'$and': [{'name': 'endpoint'}, {'parser': self.name}]})
         return int(result['value'])
 
-    def set_ednpoint(self, endpoint):
+    def set_endpoint(self, endpoint):
         _client = MongoClient('localhost', 27017)
         _mongo_base = _client['parsed']
         collection = _mongo_base['settings']
@@ -47,8 +47,7 @@ class TinkoffruSpider(scrapy.Spider):
             end = self.last_item_id
             print('nothing new parsed')
             print(f'lets make next parse from: {end}')
-
-        self.set_ednpoint(str(end))
+        self.set_endpoint(str(end))
 
     def parse(self, response: HtmlResponse):
         # get sessionId
