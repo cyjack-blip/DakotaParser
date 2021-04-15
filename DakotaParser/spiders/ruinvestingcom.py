@@ -67,7 +67,7 @@ class RuinvestingcomSpider(scrapy.Spider):
         return re.search('/news/(.*)$', link).group(1)
 
     def fetch_post_id(self, link):
-        return re.search('.*-(\d*)$', link).group(1)
+        return int(re.search('.*-(\d*)$', link).group(1))
 
     def fetch_post_type(self, link):
         return re.search('^/(.*)/.*', link).group(1)
