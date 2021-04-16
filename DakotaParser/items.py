@@ -51,3 +51,17 @@ class RuinvestingcomItem(scrapy.Item):
     img_big = scrapy.Field()
     tickers = scrapy.Field()
     provider = scrapy.Field()
+
+class VtimesioItem(scrapy.Item):
+    _id = scrapy.Field()
+    _spider = scrapy.Field()
+    type = scrapy.Field()
+    category = scrapy.Field()
+    published_at = scrapy.Field()
+    post_id = scrapy.Field()
+    announce = scrapy.Field()
+    title = scrapy.Field()
+    body = scrapy.Field()
+    img_big = scrapy.Field()
+    tickers = scrapy.Field()
+    provider = scrapy.Field()

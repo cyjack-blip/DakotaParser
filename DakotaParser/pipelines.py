@@ -42,6 +42,11 @@ class DakotaparserPipeline(DakotaparserItem):
             collection.insert_one(item)
             print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['category']} :: {item['provider']} :: {item['title']} :: tickers:{len(item['tickers'])}")
 
+        if spider.name == 'vtimesio':
+            collection = self._mongo_base[spider.name]
+            item['_spider'] = spider.name
+            collection.insert_one(item)
+            print(f"{parse(item['published_at'])} :: {item['post_id']} :: {item['category']} :: {item['provider']} :: {item['title']}")
         return item
 
 

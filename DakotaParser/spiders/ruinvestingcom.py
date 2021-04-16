@@ -30,7 +30,7 @@ class RuinvestingcomSpider(scrapy.Spider):
         super().__init__(**kwargs)
 
     def spider_closed(self, spider):
-        print(f'spider "{spider.name}" report')
+        print(f'spider "{self.name}" report')
         if self.parced_items:
             end = max(self.parced_items) + 1
             print(f'parsed items: {sorted(self.parced_items)}')
