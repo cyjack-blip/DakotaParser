@@ -3,11 +3,7 @@ from DakotaParser.items import VtimesioItem
 from pydispatch import dispatcher
 from pymongo import MongoClient
 from scrapy import signals
-from scrapy.http import HtmlResponse
-import urllib
-import json
 from scrapy.spiders import XMLFeedSpider
-from dateutil.parser import parse
 import re
 import html
 
