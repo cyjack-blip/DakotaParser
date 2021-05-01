@@ -12,7 +12,7 @@ BOT_NAME = 'BusinessInsider'
 SPIDER_MODULES = ['BusinessInsider.BusinessInsider.spiders']
 NEWSPIDER_MODULE = 'BusinessInsider.BusinessInsider.spiders'
 
-LOG_ENABLED = True
+LOG_ENABLED = False
 LOG_LEVEL = 'ERROR'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

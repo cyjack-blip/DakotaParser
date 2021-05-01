@@ -15,10 +15,10 @@ class BusinessinsiderSpider(scrapy.Spider):
     name = 'businessinsider'
     allowed_domains = ['markets.businessinsider.com']
     start_urls = [
-        'https://markets.businessinsider.com/index/components/s&p_500',
-        'https://markets.businessinsider.com/index/components/dow_jones',
-        'https://markets.businessinsider.com/index/components/nasdaq_100',
-        'https://markets.businessinsider.com/index/nasdaq_composite'
+        'https://markets.businessinsider.com/index/components/s&p_500'
+        # 'https://markets.businessinsider.com/index/components/dow_jones',
+        # 'https://markets.businessinsider.com/index/components/nasdaq_100',
+        # 'https://markets.businessinsider.com/index/nasdaq_composite'
     ]
     additional_data = {
         'https://markets.businessinsider.com/index/components/s&p_500': {
@@ -44,8 +44,8 @@ class BusinessinsiderSpider(scrapy.Spider):
         self._mongo_base = self._client['parsed']
         self.parced_items = {}
         self.summary_items = []
-        self.pages_to_parse = 2
-        self.items_to_parse_on_page = 55
+        self.pages_to_parse = 1
+        self.items_to_parse_on_page = 10
         for i in self.additional_data:
             self.parced_items[self.additional_data[i]['index']] = []
         super().__init__(**kwargs)
@@ -100,7 +100,9 @@ class BusinessinsiderSpider(scrapy.Spider):
         try:
             return report_id, {'date': date, 'analyst': t[1], 'action': t[2], 'target': t[3], 'summary': t[4], 'opinion_link': self.main_link+f[0]}
         except:
-            print(f"error parsing opinion {ticker}")
+            #  no link in opinion row
+            # print(f"error parsing opinion {ticker}")
+            return None, None
 
     def format_insiders(self, ins):
         ins = ins.replace("\n", "").replace("\t", "").replace("\r", "")
@@ -231,8 +233,9 @@ class BusinessinsiderSpider(scrapy.Spider):
             td_op = {}
             for op in opinions:
                 o_id, td = self.format_opinions(op, ticker)
-                if int(o_id) > latest_opinion_id:
-                    td_op[o_id] = td
+                if o_id and td:
+                    if int(o_id) > latest_opinion_id:
+                        td_op[o_id] = td
             item['analyst_opinion'] = td_op
 
             insiders = response.xpath("//h2[contains(text(),'Insider Activity')]/..//tbody[@class='table__tbody']/tr").extract()

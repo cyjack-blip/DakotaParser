@@ -9,7 +9,6 @@ from itemadapter import ItemAdapter
 from pymongo import MongoClient
 from BusinessInsider.BusinessInsider.items import BusinessinsiderItem
 
-
 class BusinessinsiderPipeline:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -54,7 +53,26 @@ class BusinessinsiderPipeline:
 
         if not item['moodys_rating']:
             item['moodys_rating'] = r['moodys_rating']
+        # item = self.trim_opinion(item)
+        item = self.trim_insiders(item, ticker)
 
+        return item
+
+    # def trim_opinion(self, item):
+    #     if 'analyst_opinion' in item.keys():
+    #         analyst_opinion = item['analyst_opinion']
+    #         for i in analyst_opinion.keys():
+    #             analyst_opinion[i]['ticker'] = item['ticker']
+    #     print()
+    #     return item
+
+    def trim_insiders(self, item, ticker):
+        if 'insider_activity' in item.keys():
+            insider_activity = item['insider_activity']
+            for i in enumerate(insider_activity):
+                insider_activity[i]['ticker'] = ticker
+        #  save insider_activity to the separate collection
+        #  что взять за индекс и, как проверить наличие
         return item
 
     def process_item(self, item, spider):
