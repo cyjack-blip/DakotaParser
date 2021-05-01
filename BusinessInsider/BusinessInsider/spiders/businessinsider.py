@@ -15,10 +15,10 @@ class BusinessinsiderSpider(scrapy.Spider):
     name = 'businessinsider'
     allowed_domains = ['markets.businessinsider.com']
     start_urls = [
-        'https://markets.businessinsider.com/index/components/s&p_500'
-        # 'https://markets.businessinsider.com/index/components/dow_jones',
-        # 'https://markets.businessinsider.com/index/components/nasdaq_100',
-        # 'https://markets.businessinsider.com/index/nasdaq_composite'
+        'https://markets.businessinsider.com/index/components/s&p_500',
+        'https://markets.businessinsider.com/index/components/dow_jones',
+        'https://markets.businessinsider.com/index/components/nasdaq_100',
+        'https://markets.businessinsider.com/index/nasdaq_composite'
     ]
     additional_data = {
         'https://markets.businessinsider.com/index/components/s&p_500': {
@@ -44,8 +44,8 @@ class BusinessinsiderSpider(scrapy.Spider):
         self._mongo_base = self._client['parsed']
         self.parced_items = {}
         self.summary_items = []
-        self.pages_to_parse = 1
-        self.items_to_parse_on_page = 10
+        self.pages_to_parse = 11
+        self.items_to_parse_on_page = 55
         for i in self.additional_data:
             self.parced_items[self.additional_data[i]['index']] = []
         super().__init__(**kwargs)
